@@ -124,6 +124,115 @@
     </div>
 
     <div class="store-container">
+
+        <script>
+        function toggleTheme() {
+            const body = document.body;
+            body.setAttribute('data-theme', body.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+        }
+
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const circle = document.createElement("span");
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const rect = button.getBoundingClientRect();
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - rect.left}px`;
+            circle.style.top = `${event.clientY - rect.top}px`;
+            circle.classList.add("ripple");
+            const oldRipple = button.getElementsByClassName("ripple")[0];
+            if (oldRipple) { oldRipple.remove(); }
+            button.appendChild(circle);
+        }
+
+        function formatDownloads(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            return num;
+        }
+
+        // স্মার্ট কাউন্টার সিস্টেম (৫টি অ্যাপের জন্য আলাদা)
+        const defaultCounts = { 1: 25430, 2: 12150, 3: 8540, 4: 19200, 5: 5930 };
+
+        // 🌟 ব্যানার/স্ক্রিনশট অটো-স্ক্রল ফাংশন
+        function initAutoScrollBanners() {
+            const trays = document.querySelectorAll('.screenshot-tray');
+            
+            trays.forEach(tray => {
+                let isPaused = false;
+                
+                setInterval(() => {
+                    if (isPaused) return; // পজ থাকলে স্ক্রল হবে না
+                    
+                    // যদি স্ক্রল একদম শেষে চলে যায়, আবার শুরুতে ফিরে আসবে
+                    if (tray.scrollLeft + tray.clientWidth >= tray.scrollWidth - 1) {
+                        tray.scrollLeft = 0;
+                    } else {
+                        tray.scrollLeft += 1; // স্পিড বাড়াতে চাইলে 1 এর জায়গায় 2 বা 3 দিতে পারেন
+                    }
+                }, 25); // স্মুথনেসের জন্য 25 মিলিসেকেন্ড দেওয়া হয়েছে
+
+                // ইউজার টাচ করলে বা মাউস রাখলে অটো-স্ক্রল থেমে যাবে
+                tray.addEventListener('mouseenter', () => isPaused = true);
+                tray.addEventListener('mouseleave', () => isPaused = false);
+                tray.addEventListener('touchstart', () => isPaused = true);
+                tray.addEventListener('touchend', () => {
+                    setTimeout(() => isPaused = false, 800); // টাচ ছাড়ার ০.৮ সেকেন্ড পর আবার চলবে
+                });
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            for (let i = 1; i <= 5; i++) {
+                let currentCount = localStorage.getItem(`vpn_count_app_${i}`);
+                if (!currentCount) {
+                    currentCount = defaultCounts[i];
+                    localStorage.setItem(`vpn_count_app_${i}`, currentCount);
+                }
+                const countElement = document.getElementById(`count-${i}`);
+                if(countElement) {
+                    countElement.innerHTML = formatDownloads(parseInt(currentCount)) + "+";
+                }
+            }
+            
+            // 🌟 পেজ লোড হওয়ার সাথে সাথে অটো-স্ক্রল চালু করে দেওয়া হলো
+            initAutoScrollBanners();
+        });
+
+        // ৫টি অ্যাপের জন্য ডাইরেক্ট ডাউনলোড ফাংশন
+        function startAppDownload(appId, apkLink) {
+            const label = document.getElementById(`label-${appId}`);
+            const fill = document.getElementById(`fill-${appId}`);
+            const display = document.getElementById(`count-${appId}`);
+            
+            if(!label || !fill) return;
+
+            label.innerHTML = `CONNECTING <div class="dot-flashing"><span></span><span></span><span></span></div>`;
+            
+            setTimeout(() => { 
+                fill.style.width = "100%"; 
+                label.innerHTML = `PREPARING APK...`; 
+            }, 500);
+
+            setTimeout(() => {
+                label.innerHTML = "✅ DOWNLOADING";
+                
+                let count = parseInt(localStorage.getItem(`vpn_count_app_${appId}`)) || defaultCounts[appId];
+                count++;
+                localStorage.setItem(`vpn_count_app_${appId}`, count);
+                if(display) display.innerHTML = formatDownloads(count) + "+";
+                
+                // ডিরেক্ট ব্যাকগ্রাউন্ড আইফ্রেম ডাউনলোড মেথড
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = apkLink;
+                document.body.appendChild(iframe);
+                
+                setTimeout(() => { document.body.removeChild(iframe); }, 5000);
+                
+            }, 1500); 
+        }
+    </script>
         
         <div class="app-card">
             <div class="app-info">
